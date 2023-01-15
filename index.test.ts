@@ -27,6 +27,6 @@ afterAll(async () => {
   await environment.down();
 });
 
-test("spin up postgres container", async () => {
+test("spin up postgres container", () => {
   expect(true).toBe(true);
 });
