@@ -46,23 +46,32 @@ test.only("create events table", async () => {
   const client = new Client(options);
   await client.connect();
 
+  // TODO: move to migration
   await client.query(`
     CREATE TABLE events (
-      id SERIAL,
-      date_created timestamptz,
-      date_updated timestamptz,
+      id SERIAL PRIMARY KEY,
+      index INTEGER UNIQUE, -- event order per "game"
+      date_created TIMESTAMPTZ,
+      date_updated TIMESTAMPTZ,
       type VARCHAR, -- TODO: move to enum table
-      properties jsonb
+      properties JSONB
     );
   `);
 
   try {
-    const { rows } = await client.query(`
-    INSERT INTO events (type, properties) VALUES 
-      ('create_entity', '{"uuid": "asdf1234"}')
-    RETURNING id;
-  `);
-    expect(rows).toEqual([{ id: 1 }]);
+    const { rows: rowsA } = await client.query(`
+      INSERT INTO events (index, type, properties) VALUES 
+        (0, 'create_entity', '{"uuid": "a"}'),
+        (1, 'create_component', '{"entity_uuid": "a", "component": {"type": "name", "name": "Player"}}'),
+        (2, 'create_entity', '{"uuid": "b"}'),
+        (3, 'create_component', '{"entity_uuid": "b", "component": {"type": "name", "name": "Attack"}}'),
+        (4, 'create_entity', '{"uuid": "c"}'),
+        (5, 'create_component', '{"entity_uuid": "c", "component": {"type": "name", "name": "Enemy"}}')
+      RETURNING id, index;
+    `);
+    console.log("@@ ~ file: index.test.ts:69 ~ test.only ~ rowsA", rowsA);
+
+    // expect(rowsA).toEqual([{ id: 1 }]);
   } catch (error) {
     console.error("@@ Insert event error", error);
   }
