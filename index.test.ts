@@ -42,7 +42,7 @@ test("connect to postgres container", async () => {
   client.end();
 });
 
-test.only("create events table and insert rows", async () => {
+test("create events table and insert rows", async () => {
   const client = new Client(options);
   await client.connect();
 
@@ -53,14 +53,14 @@ test.only("create events table and insert rows", async () => {
       index INTEGER UNIQUE, -- event order per "game"
       date_created TIMESTAMPTZ,
       date_updated TIMESTAMPTZ,
-      type VARCHAR, -- TODO: move to enum table
+      event_type VARCHAR, -- TODO: move to enum table
       properties JSONB
     );
   `);
 
   try {
     const { rows: rowsA } = await client.query(`
-      INSERT INTO events (index, type, properties) VALUES 
+      INSERT INTO events (index, event_type, properties) VALUES 
         (0, 'create_entity', '{"uuid": "eA"}'),
         (1, 'create_component', '{"uuid": "cA", "entity_uuid": "eA", "component": {"type": "name", "name": "Player"}}'),
         (2, 'create_component', '{"uuid": "cB", "entity_uuid": "eA", "component": {"type": "stats", "dex": 2, "strength": 10}}'),
