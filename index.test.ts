@@ -1,34 +1,25 @@
 import { afterAll, beforeAll, expect, test } from "@jest/globals";
 
-import { DockerComposeEnvironment } from "testcontainers";
-import { Client } from "pg";
+import { PostgreSqlContainer, StartedPostgreSqlContainer } from "testcontainers";
+import { Client, ClientConfig } from "pg";
 
-const options = {
-  user: "test",
-  password: "test",
-  database: "test",
-
-  host: "localhost",
-  port: "5432",
-};
-
-let environment;
-let container;
+let container: StartedPostgreSqlContainer;
+let options: ClientConfig;
 
 beforeAll(async () => {
-  const composeFilePath = __dirname;
-  const composeFile = "docker-compose.yml";
+  container = await new PostgreSqlContainer().start();
 
-  environment = await new DockerComposeEnvironment(composeFilePath, composeFile)
-    .withEnvironment(options)
-    .up();
-
-  container = environment.getContainer("postgres-1");
+  options = {
+    host: container.getHost(),
+    port: container.getPort(),
+    database: container.getDatabase(),
+    user: container.getUsername(),
+    password: container.getPassword(),
+  };
 });
 
 afterAll(async () => {
   await container.stop();
-  await environment.down();
 });
 
 test("spin up postgres container", () => {
@@ -39,7 +30,7 @@ test("connect to postgres container", async () => {
   const client = new Client(options);
   await client.connect();
 
-  client.end();
+  await client.end();
 });
 
 test("create events table and insert rows", async () => {
@@ -90,5 +81,5 @@ test("create events table and insert rows", async () => {
     console.error("@@ Insert event error", error);
   }
 
-  client.end();
+  await client.end();
 });
