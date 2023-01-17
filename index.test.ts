@@ -1,10 +1,15 @@
 import { afterAll, beforeAll, expect, test } from "@jest/globals";
 
-import { PostgreSqlContainer, StartedPostgreSqlContainer } from "testcontainers";
+import {
+  PostgreSqlContainer,
+  StartedPostgreSqlContainer,
+} from "testcontainers";
 import { Client, ClientConfig } from "pg";
 
 let container: StartedPostgreSqlContainer;
 let options: ClientConfig;
+
+jest.setTimeout(30000);
 
 beforeAll(async () => {
   container = await new PostgreSqlContainer().start();
@@ -22,7 +27,7 @@ afterAll(async () => {
   await container.stop();
 });
 
-test("spin up postgres container", () => {
+test("spin up postgres container", async () => {
   expect(true).toBe(true);
 });
 
@@ -50,7 +55,7 @@ test("create events table and insert rows", async () => {
   `);
 
   try {
-    const { rows: rowsA } = await client.query(`
+    const { rows } = await client.query(`
       INSERT INTO events (index, event_type, properties) VALUES 
         (0, 'create_entity', '{"uuid": "eA"}'),
         (1, 'create_component', '{"uuid": "cA", "entity_uuid": "eA", "component": {"type": "name", "name": "Player"}}'),
@@ -73,10 +78,11 @@ test("create events table and insert rows", async () => {
         (7, 'create_component', '{"uuid": "cF", "entity_uuid": "eC", "component": {"type": "name", "name": "Enemy"}}'),
         (8, 'create_component', '{"uuid": "cG", "entity_uuid": "eC", "component": {"type": "health", "max": 50}}'),
         (9, 'activate_effect', '{"component_uuid": "cE", "source": "eA", "target": "eC", "roll": [1, 2]}')
-      RETURNING id, index;
+      RETURNING *;
     `);
+    console.log("@@ ~ file: index.test.ts:83 ~ test ~ rows", rows);
 
-    expect(rowsA).toHaveLength(10);
+    expect(rows).toHaveLength(10);
   } catch (error) {
     console.error("@@ Insert event error", error);
   }
