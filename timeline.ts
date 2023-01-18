@@ -1,3 +1,5 @@
+import { activateEffect } from "./activateEffect";
+
 export interface Component {
   [key: string]: any;
 }
@@ -52,9 +54,15 @@ export type Timeline = Event[];
 
 export type Entity = String;
 
+export type Entities = Entity[];
+
+export interface Components {
+  [key: string]: Component;
+}
+
 export const runTimeline = (timeline: Timeline) => {
   const entities: Entity[] = [];
-  const components: { [key: string]: Component } = {};
+  const components: Components = {};
 
   for (const event of timeline) {
     switch (event.event_type) {
@@ -68,25 +76,7 @@ export const runTimeline = (timeline: Timeline) => {
         break;
 
       case "activate_effect":
-        const { component_uuid } = event.properties;
-        const { slots } = components[component_uuid];
-
-        if (slots) {
-          const slotNames = slots.map(s => s.name);
-
-          for (const slotName of slotNames) {
-            if (!event.properties[slotName]) {
-              console.error(
-                `Event '${event.id}' of type '${event.event_type}' must have key '${slotName}' to match it's source effect component slot.`
-              );
-            }
-          }
-        } else {
-          console.error(
-            `Events of type '${event.event_type}' must have 'slots' prop.`
-          );
-        }
-
+        activateEffect(event, components);
         break;
 
       default:
